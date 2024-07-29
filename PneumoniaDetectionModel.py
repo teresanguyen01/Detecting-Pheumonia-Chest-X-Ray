@@ -41,10 +41,10 @@ for i, img_path in enumerate(pneumonia_images):
     sp.axis('Off')
     # Read in the image using Matplotlib's imread() function
     img = mpimg.imread(img_path)
-    plt.imshow(img)
+    # plt.imshow(img)
 
 # Display the plot with the 16 images in a 4x4 grid
-plt.show()
+# plt.show()
 
 # Set the figure size
 fig = plt.gcf()
@@ -131,61 +131,39 @@ history = model.fit(
     validation_data=Validation
 )
 
+# Plot the training history
 history_df = pd.DataFrame(history.history)
 history_df.loc[:, ['loss', 'val_loss']].plot()
 history_df.loc[:, ['accuracy', 'val_accuracy']].plot()
 plt.show()
 
+# Evaluate the model on the test dataset
 loss, accuracy = model.evaluate(Test)
 print('The accuracy of the model on test dataset is', np.round(accuracy*100))
 
-# Load the image from the directory with the target size of (256, 256)
-test_image = load_img(
-    "chest_xray/chest_xray/test/NORMAL/IM-0010-0001.jpeg",
-    target_size=(256, 256)
-)
+# Save the model and weights
+def predict_image(image_path):
+    test_image = load_img(image_path, target_size=(256, 256))
+    plt.imshow(test_image)
+    plt.show()
 
-# Display the loaded image
-plt.imshow(test_image)
+    test_image = img_to_array(test_image)
+    test_image = np.expand_dims(test_image, axis=0)
 
-# Convert the loaded image into a NumPy array and expand its dimensions to match the expected input shape of the model
-test_image = img_to_array(test_image)
-test_image = np.expand_dims(test_image, axis=0)
+    result = model.predict(test_image)
+    class_probabilities = result[0]
 
-# Use the trained model to make a prediction on the input image
-result = model.predict(test_image)
+    if class_probabilities[0] > class_probabilities[1]:
+        print("Prediction: Normal")
+    else:
+        print("Prediction: Pneumonia")
 
-# Extract the probability of the input image belonging to each class from the prediction result
-class_probabilities = result[0]
-
-# Determine the class with the highest probability and print its label
-if class_probabilities[0] > class_probabilities[1]:
-    print("Normal")
-else:
-    print("Pneumonia")
-
-# Load another image from the directory with the target size of (256, 256)
-test_image = load_img(
-    "chest_xray/chest_xray/test/PNEUMONIA/person85_bacteria_417.jpeg",
-    target_size=(256, 256)
-)
-
-# Display the loaded image
-plt.imshow(test_image)
-
-# Convert the loaded image into a NumPy array and expand its dimensions to match the expected input shape of the model
-test_image = img_to_array(test_image)
-test_image = np.expand_dims(test_image, axis=0)
-
-# Use the trained model to make a prediction on the input image
-result = model.predict(test_image)
-
-# Extract the probability of the input image belonging to each class from the prediction result
-class_probabilities = result[0]
-
-# Determine the class with the highest probability and print its label
-if class_probabilities[0] > class_probabilities[1]:
-    print("Normal")
-else:
-    print("Pneumonia")
-
+# Interactive prediction
+while True:
+    image_path = input("Enter the path of the image to predict (type 'exit' to stop): ")
+    if image_path.lower() == "exit":
+        break
+    if os.path.exists(image_path):
+        predict_image(image_path)
+    else:
+        print("Invalid path. Please try again.")
